@@ -9,7 +9,6 @@ makedocs(;
     repo="https://github.com/JuliaMath/TensorCore.jl/blob/{commit}{path}#L{line}",
     sitename="TensorCore.jl",
     authors="Tim Holy <tim.holy@gmail.com>",
-    assets=String[],
 )
 
 deploydocs(;
