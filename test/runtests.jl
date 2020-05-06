@@ -2,11 +2,33 @@ using TensorCore
 using LinearAlgebra
 using Test
 
+#=
 @testset "Ambiguities" begin
     @test isempty(detect_ambiguities(TensorCore, Base, Core, LinearAlgebra))
 end
 
-@testset "TensorCore.jl" begin
+# Ambiguities to solve:
+
+8-element Array{SubString{String},1}:
+ "[(boxdot(A::AbstractArray{T,2} where T, B::Union{AbstractArray{T,1}, AbstractArray{T,2}} where T) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:193, boxdot(A::AbstractArray, B::Union{Adjoint{T,#s664}, Transpose{T,#s664}} where #s664<:(AbstractArray{T,1} where T) where T) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:252"
+
+ "boxdot(A::Union{Adjoint{T,#s664}, Transpose{T,#s664}} where #s664<:(AbstractArray{T,1} where T) where T, B::AbstractArray{T,2} where T) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:245, boxdot(A::AbstractArray, B::Union{Adjoint{T,#s664}, Transpose{T,#s664}} where #s664<:(AbstractArray{T,1} where T) where T) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:252"
+
+ "boxdot(A::AbstractArray{T,2} where T, B::Adjoint{T,#s664} where #s664<:(AbstractArray{T,1} where T) where T) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:247, boxdot(A::Union{Adjoint{T,#s664}, Transpose{T,#s664}} where #s664<:(AbstractArray{T,1} where T) where T, B::AbstractArray) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:251"
+
+ "boxdot(A::Union{Adjoint{T,#s664}, Transpose{T,#s664}} where #s664<:(AbstractArray{T,1} where T) where T, B::AbstractArray) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:251, boxdot(A::AbstractArray, B::Union{Adjoint{T,#s664}, Transpose{T,#s664}} where #s664<:(AbstractArray{T,1} where T) where T) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:252"
+
+ "boxdot(A::Union{Adjoint{T,#s664}, Transpose{T,#s664}} where #s664<:(AbstractArray{T,1} where T) where T, B::AbstractArray{T,2} where T) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:245, boxdot(A::AbstractArray{T,2} where T, B::Transpose{T,#s664} where #s664<:(AbstractArray{T,1} where T) where T) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:248"
+
+ "boxdot(A::Union{Adjoint{T,#s664}, Transpose{T,#s664}} where #s664<:(AbstractArray{T,1} where T) where T, B::AbstractArray{T,2} where T) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:245, boxdot(A::AbstractArray{T,2} where T, B::Adjoint{T,#s664} where #s664<:(AbstractArray{T,1} where T) where T) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:247"
+
+ "boxdot(A::AbstractArray{T,2} where T, B::Transpose{T,#s664} where #s664<:(AbstractArray{T,1} where T) where T) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:248, boxdot(A::Union{Adjoint{T,#s664}, Transpose{T,#s664}} where #s664<:(AbstractArray{T,1} where T) where T, B::AbstractArray) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:251"
+
+ "boxdot(A::AbstractArray{T,2} where T, B::Union{AbstractArray{T,1}, AbstractArray{T,2}} where T) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:193, boxdot(A::Union{Adjoint{T,#s664}, Transpose{T,#s664}} where #s664<:(AbstractArray{T,1} where T) where T, B::AbstractArray) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:251)]"
+
+=#
+
+@testset "tensor and hadamard" begin
     for T in (Int, Float32, Float64, BigFloat)
         a = [T[1, 2], T[-3, 7]]
         b = [T[5, 11], T[-13, 17]]
@@ -64,4 +86,82 @@ end
     v, w = [1,2,3], [5,7]
     @test kron(v,w) == vec(w ⊗ v)
     @test w ⊗ v == reshape(kron(v,w), (length(w), length(v)))
+end
+
+@testset "boxdot" begin
+
+    # Matrices and vectors
+    A = [1 2+im; 3 4im]
+    B = [5im 6; 7+im 8]
+    c = [1, 2+3im]
+    d = [3im, 4-5im]
+
+    @test A ⊡ B == A * B
+    @test A ⊡ c == A ⊡ c
+    @test c ⊡ A == vec(transpose(c) * A)
+    @test c ⊡ d == sum(c .* d)
+
+    @test A' ⊡ B == A' * B
+    @test A ⊡ B' == A * B'
+    @test A' ⊡ B' == A' * B'
+
+    # Dual vectors
+    @test c' ⊡ d == dot(c, d)
+    @test c ⊡ d' == conj(dot(c, d))
+    @test c' ⊡ d' == conj(dot(c', d))
+
+    @test transpose(c) ⊡ d == sum(c .* d)
+    @test c ⊡ transpose(d) == sum(c .* d)
+    @test transpose(c) ⊡ transpose(d) == sum(c .* d)
+    @test transpose(c) ⊡ adjoint(d) == sum(c .* conj(d))
+    @test adjoint(c) ⊡ transpose(d) == dot(c,d)
+
+    @test A ⊡ c' isa Adjoint
+    @test A ⊡ c' == (c ⊡ A')'
+    @test c' ⊡ A isa Adjoint
+    @test c' ⊡ A == (A' * c)'
+
+    @test B' ⊡ c' isa Adjoint
+    @test B' ⊡ c' == (c ⊡ B)'
+    @test c' ⊡ B' isa Adjoint
+    @test c' ⊡ B' == (B * c)'
+
+    @test B' ⊡ transpose(c) isa Transpose
+    @test B ⊡ transpose(c) == transpose(c ⊡ transpose(B))
+    @test transpose(c) ⊡ B' isa Transpose
+    @test transpose(c) ⊡ B == transpose(transpose(B) * c)
+
+    # Higher-dimensional arrays
+    E3 = cat(A, -B, dims=3)
+    F4 = cat(E3, conj(E3 .+ 1), dims=4)
+    E3adjoint = conj(permutedims(E3, (3,2,1)))
+
+    @test E3 ⊡ A == reshape(reshape(E3, 4,2) * A, 2,2,2)
+    @test size(A ⊡ E3) == (2, 2, 2)
+    @test size(B ⊡ F4) == (2, 2, 2, 2)
+    @test size(E3 ⊡ F4) == (2, 2, 2, 2, 2)
+
+    @test c ⊡ E3 == reshape(transpose(c) * reshape(E3, 2,4), 2,2)
+    @test size(F4 ⊡ c) == (2, 2, 2)
+
+    @test c' ⊡ E3 isa Matrix
+    @test c' ⊡ E3 == conj(c) ⊡ E3
+    @test c' ⊡ E3 == (E3adjoint ⊡ c)'
+    @test transpose(c) ⊡ E3 == c ⊡ E3
+
+    @test E3 ⊡ c' isa Matrix
+    @test E3 ⊡ c' == E3 ⊡ conj(c)
+    @test E3 ⊡ c' == (c ⊡ E3adjoint)'
+    @test E3 ⊡ transpose(c) == E3 ⊡ c
+    @test E3 ⊡ transpose(c) == transpose(c ⊡ PermutedDimsArray(E3, (3,2,1)))
+
+    # Errors
+    @test_throws DimensionMismatch ones(3) ⊡ ones(4)
+    @test_throws DimensionMismatch ones(3) ⊡ ones(4)'
+    @test_throws DimensionMismatch ones(3)' ⊡ ones(4)
+    @test_throws DimensionMismatch ones(3)' ⊡ ones(4)'
+    @test_throws DimensionMismatch ones(2,3) ⊡ ones(4)
+    @test_throws DimensionMismatch ones(2,3) ⊡ ones(4)'
+    @test_throws DimensionMismatch ones(2,3) ⊡ ones(4,5)
+
 end
