@@ -173,7 +173,7 @@ function boxdot(A::AbstractArray, B::AbstractArray)
     axA, axB = axes(Amat,2), axes(Bmat,1)
     axA == axB || _throw_dmm(axA, axB)
 
-    return reshape(Amat * Bmat, _boxdot_size(A,B))
+    return _boxdot_reshape(Amat * Bmat, A, B)
 end
 
 const ⊡ = boxdot
@@ -186,11 +186,13 @@ _squash_left(A::AbstractMatrix) = A
 _squash_right(B::AbstractArray) = reshape(B, size(B,1),:)
 _squash_right(B::AbstractVecOrMat) = B
 
-_boxdot_size(A::AbstractArray{T,N}, B::AbstractArray{S,M}) where {T,N,S,M} =
-    ntuple(i -> i<N ? size(A, i) : size(B, i-N+2), Val(N+M-2))
+function _boxdot_reshape(AB::AbstractArray, A::AbstractArray{T,N}, B::AbstractArray{S,M}) where {T,N,S,M}
+    ax = ntuple(i -> i<N ? axes(A, i) : axes(B, i-N+2), Val(N+M-2))
+    reshape(AB, ax) # some cases don't come here, so this doesn't really support OffsetArrays
+end
 
 # These can skip final reshape:
-boxdot(A::AbstractMatrix, B::AbstractVecOrMat) = A*B
+_boxdot_reshape(AB::AbstractVecOrMat, A::AbstractMatrix, B::AbstractVecOrMat) = AB
 
 # These produce scalar output:
 function boxdot(A::AbstractVector, B::AbstractVector)
@@ -232,8 +234,11 @@ end
 using LinearAlgebra: AdjointAbsVec, TransposeAbsVec, AdjOrTransAbsVec
 
 # Adjont and Transpose, vectors or almost (returning a scalar)
-boxdot(A::AdjOrTransAbsVec, B::AbstractVector) = vec(A) ⊡ B # maybe not optimal
-boxdot(A::AbstractVector, B::AdjOrTransAbsVec) = A ⊡ vec(B)
+boxdot(A::AdjointAbsVec, B::AbstractVector) = vec(A) ⊡ B # maybe not optimal
+boxdot(A::TransposeAbsVec, B::AbstractVector) = vec(A) ⊡ B
+
+boxdot(A::AbstractVector, B::AdjointAbsVec) = A ⊡ vec(B)
+boxdot(A::AbstractVector, B::TransposeAbsVec) = A ⊡ vec(B)
 
 boxdot(A::AdjointAbsVec, B::AdjointAbsVec) = adjoint(adjoint(A) ⊡ adjoint(B))
 boxdot(A::AdjointAbsVec, B::TransposeAbsVec) = vec(A) ⊡ vec(B)
@@ -241,18 +246,18 @@ boxdot(A::TransposeAbsVec, B::AdjointAbsVec) = vec(A) ⊡ vec(B)
 boxdot(A::TransposeAbsVec, B::TransposeAbsVec) = vec(A) ⊡ vec(B)
 
 # ... with a matrix (returning another such)
-boxdot(A::AdjOrTransAbsVec, B::AbstractMatrix) = A * B
+boxdot(A::AdjointAbsVec, B::AbstractMatrix) = A * B
+boxdot(A::TransposeAbsVec, B::AbstractMatrix) = A * B
 
 boxdot(A::AbstractMatrix, B::AdjointAbsVec) = (B' ⊡ A')' # unhappy that this re-orders *
 boxdot(A::AbstractMatrix, B::TransposeAbsVec) = transpose(transpose(B) ⊡ transpose(A))
 
 # ... and with higher-dim (returning a plain array)
-boxdot(A::AdjOrTransAbsVec, B::AbstractArray) = vec(A) ⊡ B
-boxdot(A::AdjOrTransAbsVec, B::AbstractVecOrMat) = vec(A) ⊡ B # avoids an ambiguity
-boxdot(A::AbstractArray, B::AdjOrTransAbsVec) = A ⊡ vec(B)
-boxdot(A::AbstractVecOrMat, B::AdjOrTransAbsVec) = A ⊡ vec(B)
+boxdot(A::AdjointAbsVec, B::AbstractArray) = vec(A) ⊡ B
+boxdot(A::TransposeAbsVec, B::AbstractArray) = vec(A) ⊡ B
 
-# There are still some method ambiguities
+boxdot(A::AbstractArray, B::AdjointAbsVec) = A ⊡ vec(B)
+boxdot(A::AbstractArray, B::TransposeAbsVec) = A ⊡ vec(B)
 
 # Each of these can have a matching method for boxdot!,
 # although Y may need some thought, perhaps pass a function in?

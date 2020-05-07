@@ -2,31 +2,11 @@ using TensorCore
 using LinearAlgebra
 using Test
 
-#=
-@testset "Ambiguities" begin
-    @test isempty(detect_ambiguities(TensorCore, Base, Core, LinearAlgebra))
+if VERSION < v"1.5-"
+    @testset "Ambiguities" begin
+        @test isempty(detect_ambiguities(TensorCore, Base, Core, LinearAlgebra))
+    end
 end
-
-# Ambiguities to solve:
-
-8-element Array{SubString{String},1}:
- "[(boxdot(A::AbstractArray{T,2} where T, B::Union{AbstractArray{T,1}, AbstractArray{T,2}} where T) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:193, boxdot(A::AbstractArray, B::Union{Adjoint{T,#s664}, Transpose{T,#s664}} where #s664<:(AbstractArray{T,1} where T) where T) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:252"
-
- "boxdot(A::Union{Adjoint{T,#s664}, Transpose{T,#s664}} where #s664<:(AbstractArray{T,1} where T) where T, B::AbstractArray{T,2} where T) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:245, boxdot(A::AbstractArray, B::Union{Adjoint{T,#s664}, Transpose{T,#s664}} where #s664<:(AbstractArray{T,1} where T) where T) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:252"
-
- "boxdot(A::AbstractArray{T,2} where T, B::Adjoint{T,#s664} where #s664<:(AbstractArray{T,1} where T) where T) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:247, boxdot(A::Union{Adjoint{T,#s664}, Transpose{T,#s664}} where #s664<:(AbstractArray{T,1} where T) where T, B::AbstractArray) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:251"
-
- "boxdot(A::Union{Adjoint{T,#s664}, Transpose{T,#s664}} where #s664<:(AbstractArray{T,1} where T) where T, B::AbstractArray) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:251, boxdot(A::AbstractArray, B::Union{Adjoint{T,#s664}, Transpose{T,#s664}} where #s664<:(AbstractArray{T,1} where T) where T) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:252"
-
- "boxdot(A::Union{Adjoint{T,#s664}, Transpose{T,#s664}} where #s664<:(AbstractArray{T,1} where T) where T, B::AbstractArray{T,2} where T) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:245, boxdot(A::AbstractArray{T,2} where T, B::Transpose{T,#s664} where #s664<:(AbstractArray{T,1} where T) where T) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:248"
-
- "boxdot(A::Union{Adjoint{T,#s664}, Transpose{T,#s664}} where #s664<:(AbstractArray{T,1} where T) where T, B::AbstractArray{T,2} where T) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:245, boxdot(A::AbstractArray{T,2} where T, B::Adjoint{T,#s664} where #s664<:(AbstractArray{T,1} where T) where T) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:247"
-
- "boxdot(A::AbstractArray{T,2} where T, B::Transpose{T,#s664} where #s664<:(AbstractArray{T,1} where T) where T) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:248, boxdot(A::Union{Adjoint{T,#s664}, Transpose{T,#s664}} where #s664<:(AbstractArray{T,1} where T) where T, B::AbstractArray) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:251"
-
- "boxdot(A::AbstractArray{T,2} where T, B::Union{AbstractArray{T,1}, AbstractArray{T,2}} where T) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:193, boxdot(A::Union{Adjoint{T,#s664}, Transpose{T,#s664}} where #s664<:(AbstractArray{T,1} where T) where T, B::AbstractArray) in TensorCore at /Users/me/.julia/dev/TensorCore/src/TensorCore.jl:251)]"
-
-=#
 
 @testset "tensor and hadamard" begin
     for T in (Int, Float32, Float64, BigFloat)
