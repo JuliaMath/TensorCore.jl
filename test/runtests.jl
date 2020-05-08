@@ -65,3 +65,64 @@ end
     @test kron(v,w) == vec(w ⊗ v)
     @test w ⊗ v == reshape(kron(v,w), (length(w), length(v)))
 end
+
+@testset "arrays of arrays" begin
+
+    # This is a matrix representation of the complex numbers:
+    jm = [0 1; -1 0]
+    om = [1 0; 0 1]
+    @test jm * jm == -om
+    @test jm * om == om * jm == jm
+    @test om * om == om
+
+    @test jm' == -jm
+
+    mreal(x::Matrix) = tr(x)/2
+    jmag(x::Matrix) = tr(-x * jm)/2
+    @test mreal((2om+3jm)^2) == real((2+3im)^2)
+    @test jmag((2om+3jm)^2) == imag((2+3im)^2)
+
+    v = [im, 2, 3+im]
+    vm = [jm, 2om, 3om + jm]
+
+    w = [4 + im, 5, 6+7im]
+    wm = [4om + jm, 5om, 6om+7jm]
+    @test real.(w) == mreal.(wm)
+    @test imag.(w) == jmag.(wm)
+
+    # hadamard & tensor
+    @test real.(v ⊙ w) == mreal.(vm ⊙ wm)
+    @test imag.(v ⊙ w) == jmag.(vm ⊙ wm)
+
+    @test real.(v ⊗ w) == mreal.(vm ⊗ wm)
+    @test imag.(v ⊗ w) == jmag.(vm ⊗ wm)
+
+    # times, cross & dot
+    outervw = v * w'
+    @test outervw == mreal.(vm * wm') + im * jmag.(vm * wm')
+
+    vcrossw = v × w
+    @test vcrossw == mreal.(vm × wm) + im * jmag.(vm × wm)
+
+    dvw = dot(v, w) # 36 + 11im
+    @test dvw == v' * w
+    @test dvw == sum(v[i]' * w[i] for i in 1:3)
+
+    m_star = vm' * wm  # recursive adjoint is important here!
+    @test dvw == mreal(m_star) + im * jmag(m_star)
+
+    m_wrong = only(permutedims(vm) * wm)
+    @test mreal(m_wrong) + im * jmag(m_wrong) == 20 + 31im
+
+    m_sum = sum(vm[i]' * wm[i] for i in 1:3)
+    @test dvw == mreal(m_sum) + im * jmag(m_sum)
+
+    dot(vm, wm) # 72, wtf?
+    sum(dot(vm[i], wm[i]) for i in 1:3)
+    # I think this behaviour was introduced here:
+    # https://github.com/JuliaLang/julia/pull/27401
+    # I don't actually see an argument for this, and there also seem to be no tests
+    # of this in LinearAlgebra (although I have not changed & run them to check).
+
+end
+
