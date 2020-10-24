@@ -265,12 +265,13 @@ boxdot(A::AbstractArray, B::TransposeAbsVec) = A ⊡ vec(B)
 # For complex v, vec(v') is going to cause generic_mul!, can you avoid that?
 
 """
-    @pirate adjoint transpose
+    TensorCore._adjoint(A)
 
-This adds methods for higher-dimensional arrays, which always reverse the
-order of dimensions, and conjugate in the case of `adjoint`.
+This extends `adjoint` to understand higher-dimensional arrays, always reversing the
+order of dimensions. On Julia 1.5 and later, the symbol `'` can be overloaded by
+`var"'" = TensorCore._adjoint`.
 
-Ensures that `(x ⊡ y)' == y' ⊡ x'` holds for `x` and `y` arrays of any dimension.
+Then `(x ⊡ y)' == y' ⊡ x'` holds for `x` and `y` arrays of any dimension.
 ```
 julia> T3 = rand(3,4,5); v = rand(5);
 
@@ -282,28 +283,7 @@ julia> @pirate adjoint
 julia> v ⊡ T3' == (T3 ⊡ v')'
 true
 ```
-On Julia 1.5, it should be possible to override `'` locally
-(instead of committing piracy) by writing `var"'" = TensorCore._adjoint`,
-thanks to this PR: https://github.com/JuliaLang/julia/pull/34634 .
 """
-macro pirate(exs...)
-    out = quote end
-    for ex in exs
-        if ex == :adjoint
-            for N in 3:16
-                @eval $LinearAlgebra.adjoint(x::AbstractArray{T,$N}) where {T} = $_adjoint(x)
-            end
-        elseif ex == :transpose
-            for N in 3:16
-                @eval $LinearAlgebra.transpose(x::AbstractArray{T,$N}) where {T} = $_transpose(x)
-            end
-        else
-            error("don't understand $ex")
-        end
-    end
-    nothing
-end
-
 _adjoint(x) = adjoint(x)
 _adjoint(x::AbstractVecOrMat) = adjoint(x)
 _adjoint(x::AbstractArray{T,N}) where {T,N} = conj(PermutedDimsArray(x, ntuple(i -> N-i+1, N)))
