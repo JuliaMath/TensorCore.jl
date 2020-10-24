@@ -121,7 +121,7 @@ end
             @test dvw == mreal(m_star) + im * jmag(m_star) # fails on 1.4
         end
 
-        m_wrong = only(permutedims(vm) * wm)
+        m_wrong = first(permutedims(vm) * wm)
         @test mreal(m_wrong) + im * jmag(m_wrong) == 20 + 31im
 
         m_sum = sum(vm[i]' * wm[i] for i in 1:3)
