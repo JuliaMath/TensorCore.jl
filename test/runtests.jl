@@ -144,4 +144,17 @@ end
     @test_throws DimensionMismatch ones(2,3) ⊡ ones(4)'
     @test_throws DimensionMismatch ones(2,3) ⊡ ones(4,5)
 
+    # In-place
+    @test boxdot!(similar(c), A, c) == A * c
+    @test boxdot!(similar(c), A, c, 100) == A * c * 100
+    @test boxdot!(copy(c), B, d, 100, -5) == B * d * 100 .- 5 .* c
+
+    @test boxdot!(similar(c), A, c') == A * conj(c)
+    @test boxdot!(similar(c,1), c, d') == [sum(c .* conj(d))]
+
+    @test boxdot!(similar(c)', c', A) == c' * A
+    @test boxdot!(similar(c,1,2), c', A) == c' * A
+
+    @test boxdot!(similar(c,1), c', d) == [dot(c, d)]
+
 end

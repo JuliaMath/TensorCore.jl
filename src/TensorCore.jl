@@ -211,23 +211,13 @@ boxdot(a::Number, B::AbstractArray) = a*B
 boxdot(a::Number, b::Number) = a*b
 
 """
-    boxdot!(Y, A, B)
+    boxdot!(Y, A, B, α=1, β=0)
 
-In-place version of `boxdot`, i.e. `Y .= A ⊡ B`.
+In-place version of `boxdot`, i.e. `Y .= (A ⊡ B) .* β .+ Y .* α`.
 """
-function boxdot!(Y::AbstractArray, A::AbstractArray, B::AbstractArray)
-    (Y isa AdjOrTransAbsVec || A isa AdjOrTransAbsVec || B isa AdjOrTransAbsVec) &&
-        error("boxdot! can't handle row vectors yet")
-    sz = prod(size(A)[1:end-1]), prod(size(B)[2:end])
-    mul!(reshape(Y, sz), _squash_left(A), _squash_right(B))
-    Y
-end
-
-function boxdot!(Y::AbstractArray, A::AbstractArray, B::AbstractArray, α::Number, β::Number=zero(eltype(Y)))
-    (Y isa AdjOrTransAbsVec || A isa AdjOrTransAbsVec || B isa AdjOrTransAbsVec) &&
-        error("boxdot! can't handle row vectors yet")
-    sz = prod(size(A)[1:end-1]), prod(size(B)[2:end])
-    mul!(reshape(Y, sz), _squash_left(A), _squash_right(B), α, β)
+function boxdot!(Y::AbstractArray, A::AbstractArray, B::AbstractArray, α::Number=true, β::Number=false)
+    szY = prod(size(A)[1:end-1]), prod(size(B)[2:end])
+    mul!(reshape(Y, szY), _squash_left(A), _squash_right(B), α, β)
     Y
 end
 
@@ -259,8 +249,9 @@ boxdot(A::TransposeAbsVec, B::AbstractArray) = vec(A) ⊡ B
 boxdot(A::AbstractArray, B::AdjointAbsVec) = A ⊡ vec(B)
 boxdot(A::AbstractArray, B::TransposeAbsVec) = A ⊡ vec(B)
 
-# Each of these can have a matching method for boxdot!,
-# although Y may need some thought, perhaps pass a function in?
+# For boxdot!, only where mul! behaves differently:
+boxdot!(Y::AbstractArray, A::AbstractArray, B::AdjOrTransAbsVec,
+    α::Number=true, β::Number=false) = boxdot!(Y, A, vec(B))
 
 """
     TensorCore._adjoint(A)
