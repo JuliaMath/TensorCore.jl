@@ -210,17 +210,6 @@ boxdot(A::AbstractArray, b::Number) = A*b
 boxdot(a::Number, B::AbstractArray) = a*B
 boxdot(a::Number, b::Number) = a*b
 
-"""
-    boxdot!(Y, A, B, α=1, β=0)
-
-In-place version of `boxdot`, i.e. `Y .= (A ⊡ B) .* β .+ Y .* α`.
-"""
-function boxdot!(Y::AbstractArray, A::AbstractArray, B::AbstractArray, α::Number=true, β::Number=false)
-    szY = prod(size(A)[1:end-1]), prod(size(B)[2:end])
-    mul!(reshape(Y, szY), _squash_left(A), _squash_right(B), α, β)
-    Y
-end
-
 using LinearAlgebra: AdjointAbsVec, TransposeAbsVec, AdjOrTransAbsVec
 
 # Adjont and Transpose, vectors or almost (returning a scalar)
@@ -249,9 +238,40 @@ boxdot(A::TransposeAbsVec, B::AbstractArray) = vec(A) ⊡ B
 boxdot(A::AbstractArray, B::AdjointAbsVec) = A ⊡ vec(B)
 boxdot(A::AbstractArray, B::TransposeAbsVec) = A ⊡ vec(B)
 
-# For boxdot!, only where mul! behaves differently:
-boxdot!(Y::AbstractArray, A::AbstractArray, B::AdjOrTransAbsVec,
-    α::Number=true, β::Number=false) = boxdot!(Y, A, vec(B))
+if VERSION < v"1.3" # Then 5-arg mul! isn't defined
+
+    """
+        boxdot!(Y, A, B)
+
+    In-place version of `boxdot`, i.e. `Y .= A ⊡ B`.
+    """
+    function boxdot!(Y::AbstractArray, A::AbstractArray, B::AbstractArray)
+        szY = prod(size(A)[1:end-1]), prod(size(B)[2:end])
+        mul!(reshape(Y, szY), _squash_left(A), _squash_right(B))
+        Y
+    end
+
+    boxdot!(Y::AbstractArray, A::AbstractArray, B::AdjOrTransAbsVec) = boxdot!(Y, A, vec(B))
+
+else
+
+    """
+        boxdot!(Y, A, B, α=1, β=0)
+
+    In-place version of `boxdot`, i.e. `Y .= (A ⊡ B) .* β .+ Y .* α`.
+    Like 5-argument `mul!`, the use of `α, β` here requires Julia 1.3 or later.
+    """
+    function boxdot!(Y::AbstractArray, A::AbstractArray, B::AbstractArray, α::Number=true, β::Number=false)
+        szY = prod(size(A)[1:end-1]), prod(size(B)[2:end])
+        mul!(reshape(Y, szY), _squash_left(A), _squash_right(B), α, β)
+        Y
+    end
+
+    # For boxdot!, only where mul! behaves differently:
+    boxdot!(Y::AbstractArray, A::AbstractArray, B::AdjOrTransAbsVec,
+        α::Number=true, β::Number=false) = boxdot!(Y, A, vec(B))
+
+end
 
 """
     TensorCore._adjoint(A)

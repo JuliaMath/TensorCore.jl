@@ -146,8 +146,10 @@ end
 
     # In-place
     @test boxdot!(similar(c), A, c) == A * c
-    @test boxdot!(similar(c), A, c, 100) == A * c * 100
-    @test boxdot!(copy(c), B, d, 100, -5) == B * d * 100 .- 5 .* c
+    if VERSION >= v"1.3"
+        @test boxdot!(similar(c), A, c, 100) == A * c * 100
+        @test boxdot!(copy(c), B, d, 100, -5) == B * d * 100 .- 5 .* c
+    end
 
     @test boxdot!(similar(c), A, c') == A * conj(c)
     @test boxdot!(similar(c,1), c, d') == [sum(c .* conj(d))]
