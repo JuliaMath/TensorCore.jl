@@ -158,7 +158,9 @@ end
         @test V' * M == (M' * V)'
 
         @test V' * V == dot(V,V) # here the behaviour of dot is not wrong
-        @test V' * M * W == dot(V,M,W)
+        if VERSION >= v"1.4"
+            @test V' * M * W == dot(V,M,W)
+        end
 
         # kron & TensorCore
         @test M ⊙ M == M .* M != map(⊙, M, M)
