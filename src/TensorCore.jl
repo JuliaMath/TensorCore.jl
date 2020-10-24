@@ -234,22 +234,22 @@ end
 using LinearAlgebra: AdjointAbsVec, TransposeAbsVec, AdjOrTransAbsVec
 
 # Adjont and Transpose, vectors or almost (returning a scalar)
-boxdot(A::AdjointAbsVec, B::AbstractVector) = vec(A) ⊡ B # maybe not optimal
-boxdot(A::TransposeAbsVec, B::AbstractVector) = vec(A) ⊡ B
+boxdot(A::AdjointAbsVec, B::AbstractVector) = A * B
+boxdot(A::TransposeAbsVec, B::AbstractVector) = A * B
 
 boxdot(A::AbstractVector, B::AdjointAbsVec) = A ⊡ vec(B)
 boxdot(A::AbstractVector, B::TransposeAbsVec) = A ⊡ vec(B)
 
-boxdot(A::AdjointAbsVec, B::AdjointAbsVec) = adjoint(adjoint(A) ⊡ adjoint(B))
+boxdot(A::AdjointAbsVec, B::AdjointAbsVec) = adjoint(adjoint(B) ⊡ adjoint(A))
 boxdot(A::AdjointAbsVec, B::TransposeAbsVec) = vec(A) ⊡ vec(B)
 boxdot(A::TransposeAbsVec, B::AdjointAbsVec) = vec(A) ⊡ vec(B)
-boxdot(A::TransposeAbsVec, B::TransposeAbsVec) = vec(A) ⊡ vec(B)
+boxdot(A::TransposeAbsVec, B::TransposeAbsVec) = transpose(transpose(B) ⊡ transpose(A))
 
 # ... with a matrix (returning another such)
 boxdot(A::AdjointAbsVec, B::AbstractMatrix) = A * B
 boxdot(A::TransposeAbsVec, B::AbstractMatrix) = A * B
 
-boxdot(A::AbstractMatrix, B::AdjointAbsVec) = (B' ⊡ A')' # unhappy that this re-orders *
+boxdot(A::AbstractMatrix, B::AdjointAbsVec) = (B' ⊡ A')'
 boxdot(A::AbstractMatrix, B::TransposeAbsVec) = transpose(transpose(B) ⊡ transpose(A))
 
 # ... and with higher-dim (returning a plain array)
@@ -261,8 +261,6 @@ boxdot(A::AbstractArray, B::TransposeAbsVec) = A ⊡ vec(B)
 
 # Each of these can have a matching method for boxdot!,
 # although Y may need some thought, perhaps pass a function in?
-
-# For complex v, vec(v') is going to cause generic_mul!, can you avoid that?
 
 """
     TensorCore._adjoint(A)
