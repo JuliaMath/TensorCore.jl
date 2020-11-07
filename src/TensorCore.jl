@@ -277,8 +277,8 @@ end
     TensorCore._adjoint(A)
 
 This extends `adjoint` to understand higher-dimensional arrays, always reversing the
-order of dimensions. On Julia 1.5 and later, the symbol `'` can be overloaded by
-`var"'" = TensorCore._adjoint`.
+order of dimensions. On Julia 1.5 and later, the symbol `'` can be overloaded as
+`Base.var"'"`, as shown below.
 
 Then `(x ⊡ y)' == y' ⊡ x'` holds for `x` and `y` arrays of any dimension.
 ```
@@ -287,9 +287,9 @@ julia> T3 = rand(3,4,5); v = rand(5);
 julia> size(T3 ⊡ v')
 (3, 4)
 
-julia> @pirate adjoint
+julia> Base.var"'"(a::AbstractArray) = TensorCore._adjoint(a)
 
-julia> v ⊡ T3' == (T3 ⊡ v')'
+julia> v ⊡ T3' ≈ (T3 ⊡ v')'
 true
 ```
 """
@@ -298,7 +298,7 @@ _adjoint(x::AbstractVecOrMat) = adjoint(x)
 _adjoint(x::AbstractArray{T,N}) where {T,N} = conj(PermutedDimsArray(x, ntuple(i -> N-i+1, N)))
 
 _transpose(x) = transpose(x)
-_transpose(x::AbstractVecOrMat) = adjoint(x)
+_transpose(x::AbstractVecOrMat) = transpose(x)
 _transpose(x::AbstractArray{T,N}) where {T,N} = PermutedDimsArray(x, ntuple(i -> N-i+1, N))
 
 end
