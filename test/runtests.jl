@@ -117,11 +117,18 @@ end
     E3 = cat(A, -B, dims=3)
     F4 = cat(E3, conj(E3 .+ 1), dims=4)
     E3adjoint = conj(permutedims(E3, (3,2,1)))
+    E3lazy = PermutedDimsArray(permutedims(E3, (3,2,1)), (3,2,1))
+    F4lazy = PermutedDimsArray(permutedims(F4, (4,3,2,1)), (4,3,2,1))
+    @test E3lazy == E3
+    @test F4lazy == F4
 
     @test E3 ⊡ A == reshape(reshape(E3, 4,2) * A, 2,2,2)
     @test size(A ⊡ E3) == (2, 2, 2)
     @test size(B ⊡ F4) == (2, 2, 2, 2)
     @test size(E3 ⊡ F4) == (2, 2, 2, 2, 2)
+    @test E3lazy ⊡ A == E3 ⊡ A
+    @test E3lazy ⊡ F4lazy == E3 ⊡ F4
+    @test F4lazy ⊡ E3lazy == F4 ⊡ E3
 
     @test c ⊡ E3 == reshape(transpose(c) * reshape(E3, 2,4), 2,2)
     @test size(F4 ⊡ c) == (2, 2, 2)
@@ -130,6 +137,7 @@ end
     @test c' ⊡ E3 == conj(c) ⊡ E3
     @test c' ⊡ E3 == (E3adjoint ⊡ c)'
     @test transpose(c) ⊡ E3 == c ⊡ E3
+    @test c ⊡ E3lazy == c ⊡ E3
 
     @test E3 ⊡ c' isa Matrix
     @test E3 ⊡ c' == E3 ⊡ conj(c)

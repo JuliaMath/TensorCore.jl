@@ -5,7 +5,6 @@ using LinearAlgebra
 export ⊙, hadamard, hadamard!
 export ⊗, tensor, tensor!
 export ⊡, boxdot, boxdot!
-export @pirate
 
 """
     hadamard(a, b)
