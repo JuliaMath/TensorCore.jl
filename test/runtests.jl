@@ -2,8 +2,10 @@ using TensorCore
 using LinearAlgebra
 using Test
 
-if VERSION < v"1.5-"
-    @testset "Ambiguities" begin
+@testset "Ambiguities" begin
+    if VERSION >= v"1.6-"
+        @test isempty(detect_ambiguities(TensorCore))
+    else
         @test isempty(detect_ambiguities(TensorCore, Base, Core, LinearAlgebra))
     end
 end
