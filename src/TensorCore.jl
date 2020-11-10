@@ -132,7 +132,8 @@ export boxdot, ⊡, boxdot!
 Generalised matrix multiplication: Contracts the last dimension of `A` with
 the first dimension of `B`, for any `ndims(A)` & `ndims(B)`.
 If both are vectors, then it returns a scalar `== sum(A .* B)`.
-```
+
+```jldoctest; setup=:(using TensorCore)
 julia> A = rand(3,4,5); B = rand(5,6,7);
 
 julia> size(A ⊡ B)
@@ -141,14 +142,15 @@ julia> size(A ⊡ B)
 julia> typeof(rand(5) ⊡ rand(5))
 Float64
 
-julia> B ⊡ A
-ERROR: DimensionMismatch("neighbouring axes of `A` and `B` must match, got Base.OneTo(6) and Base.OneTo(3)")
+julia> try B ⊡ A catch err println(err) end
+DimensionMismatch("neighbouring axes of `A` and `B` must match, got Base.OneTo(7) and Base.OneTo(3)")
 ```
 This is the same behaviour as Mathematica's function `Dot[A, B]`.
 
 When interacting with `Adjoint` vectors, this always obeys `(x ⊡ y)' == y' ⊡ x'`,
 and hence may sometimes return another `Adjoint` vector. (And similarly for `Transpose`.)
-```
+
+```jldoctest; setup=:(using TensorCore)
 julia> M = rand(5,5); v = rand(5);
 
 julia> typeof(v ⊡ M')
@@ -280,7 +282,8 @@ order of dimensions. On Julia 1.5 and later, the symbol `'` can be overloaded as
 `Base.var"'"`, as shown below.
 
 Then `(x ⊡ y)' == y' ⊡ x'` holds for `x` and `y` arrays of any dimension.
-```
+
+```jldoctest; setup=:(using TensorCore)
 julia> T3 = rand(3,4,5); v = rand(5);
 
 julia> size(T3 ⊡ v')
