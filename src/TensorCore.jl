@@ -202,7 +202,7 @@ function boxdot(A::AbstractVector, B::AbstractVector)
     if eltype(A) <: Number
         return transpose(A)*B
     else
-        return sum(a*b for a in A, b in B)
+        return sum(a*b for (a,b) in zip(A,B))
     end
 end
 
