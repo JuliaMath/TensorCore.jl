@@ -278,8 +278,8 @@ end
     TensorCore._adjoint(A)
 
 This extends `adjoint` to understand higher-dimensional arrays, always reversing the
-order of dimensions. On Julia 1.5 and later, the symbol `'` can be overloaded as
-`Base.var"'"`, as shown below.
+order of dimensions. On Julia 1.5 and later, the symbol `'` can be overloaded locally
+as `var"'"`, as shown below.
 
 Then `(x ⊡ y)' == y' ⊡ x'` holds for `x` and `y` arrays of any dimension.
 
@@ -289,9 +289,9 @@ julia> T3 = rand(3,4,5); v = rand(5);
 julia> size(T3 ⊡ v')
 (3, 4)
 
-julia> Base.var"'"(a::AbstractArray) = TensorCore._adjoint(a)
-
-julia> v ⊡ T3' ≈ (T3 ⊡ v')'
+julia> let var"'" = TensorCore._adjoint
+         v ⊡ T3' ≈ (T3 ⊡ v')'
+       end
 true
 ```
 """
