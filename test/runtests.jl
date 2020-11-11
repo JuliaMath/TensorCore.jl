@@ -168,5 +168,15 @@ end
     @test boxdot!(similar(c,1,2), c', A) == c' * A
 
     @test boxdot!(similar(c,1), c', d) == [dot(c, d)]
+end
 
+@testset "_adjoint" begin
+    A = [1 2+im; 3 4im]
+    E3 = cat(A, -A, dims=3)
+    F4 = cat(E3, conj(E3 .+ 1), dims=4)
+
+    @test TensorCore._adjoint(E3) == conj(permutedims(E3, (3,2,1)))
+    @test TensorCore._transpose(F4) == permutedims(F4, (4,3,2,1))
+    @test TensorCore._adjoint(A) == A'
+    @test TensorCore._transpose(A) == transpose(A)
 end
