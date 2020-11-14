@@ -174,9 +174,17 @@ end
     A = [1 2+im; 3 4im]
     E3 = cat(A, -A, dims=3)
     F4 = cat(E3, conj(E3 .+ 1), dims=4)
+    M3 = [rand(ComplexF32, 2,2) for _ in 1:3, _ in 1:4, _ in 1:5];
 
     @test TensorCore._adjoint(E3) == conj(permutedims(E3, (3,2,1)))
     @test TensorCore._transpose(F4) == permutedims(F4, (4,3,2,1))
     @test TensorCore._adjoint(A) == A'
     @test TensorCore._transpose(A) == transpose(A)
+
+    @test TensorCore._adjoint(M3)[5,4,3] == adjoint(M3[3,4,5])
+    @test TensorCore._transpose(M3)[1,2,3] == transpose(M3[3,2,1])
+
+    @test TensorCore._adjoint(E3 ⊗ F4) == TensorCore._adjoint(F4) ⊗ TensorCore._adjoint(E3)
+    @test TensorCore._adjoint(E3 ⊡ F4) == TensorCore._adjoint(F4) ⊡ TensorCore._adjoint(E3)
+    @test TensorCore._adjoint(M3 ⊡ TensorCore._adjoint(M3)) ≈ M3 ⊡ TensorCore._adjoint(M3)
 end

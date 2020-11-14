@@ -297,10 +297,12 @@ true
 """
 _adjoint(x) = adjoint(x)
 _adjoint(x::AbstractVecOrMat) = adjoint(x)
-_adjoint(x::AbstractArray{T,N}) where {T,N} = conj(PermutedDimsArray(x, ntuple(i -> N-i+1, N)))
+_adjoint(x::AbstractArray{T,N}) where {T<:Number,N} = conj(PermutedDimsArray(x, ntuple(i -> N-i+1, N)))
+_adjoint(x::AbstractArray{T,N}) where {T,N} = adjoint.(PermutedDimsArray(x, ntuple(i -> N-i+1, N)))
 
 _transpose(x) = transpose(x)
 _transpose(x::AbstractVecOrMat) = transpose(x)
-_transpose(x::AbstractArray{T,N}) where {T,N} = PermutedDimsArray(x, ntuple(i -> N-i+1, N))
+_transpose(x::AbstractArray{T,N}) where {T<:Number,N} = PermutedDimsArray(x, ntuple(i -> N-i+1, N))
+_transpose(x::AbstractArray{T,N}) where {T,N} = transpose.(PermutedDimsArray(x, ntuple(i -> N-i+1, N)))
 
 end
