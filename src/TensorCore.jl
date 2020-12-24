@@ -15,6 +15,7 @@ For arrays `a` and `b`, perform elementwise multiplication.
 
 `⊙` can be passed as an operator to higher-order functions.
 
+# Examples
 ```jldoctest; setup=:(using TensorCore)
 julia> a = [2, 3]; b = [5, 7];
 
@@ -27,6 +28,8 @@ julia> a ⊙ [5]
 ERROR: DimensionMismatch("Axes of `A` and `B` must match, got (Base.OneTo(2),) and (Base.OneTo(1),)")
 [...]
 ```
+
+See also `hadamard!(y, a, b)`.
 """
 function hadamard(A::AbstractArray, B::AbstractArray)
     @noinline throw_dmm(axA, axB) = throw(DimensionMismatch("Axes of `A` and `B` must match, got $axA and $axB"))
@@ -63,6 +66,10 @@ end
 Compute the tensor product of `A` and `B`.
 If `C = A ⊗ B`, then `C[i1, ..., im, j1, ..., jn] = A[i1, ... im] * B[j1, ..., jn]`.
 
+For vectors `v` and `w`, the Kronecker product is related to the tensor product by
+`kron(v,w) == vec(w ⊗ v)` or `w ⊗ v == reshape(kron(v,w), (length(w), length(v)))`.
+
+# Examples
 ```jldoctest; setup=:(using TensorCore)
 julia> a = [2, 3]; b = [5, 7, 11];
 
@@ -71,9 +78,7 @@ julia> a ⊗ b
  10  14  22
  15  21  33
 ```
-
-For vectors `v` and `w`, the Kronecker product is related to the tensor product by
-`kron(v,w) == vec(w ⊗ v)` or `w ⊗ v == reshape(kron(v,w), (length(w), length(v)))`.
+See also `tensor!(Y,A,B)`.
 """
 tensor(A::AbstractArray, B::AbstractArray) = [a*b for a in A, b in B]
 const ⊗ = tensor
@@ -133,6 +138,7 @@ Generalised matrix multiplication: Contracts the last dimension of `A` with
 the first dimension of `B`, for any `ndims(A)` & `ndims(B)`.
 If both are vectors, then it returns a scalar `== sum(A .* B)`.
 
+# Examples
 ```jldoctest; setup=:(using TensorCore)
 julia> A = rand(3,4,5); B = rand(5,6,7);
 
@@ -146,6 +152,10 @@ julia> try B ⊡ A catch err println(err) end
 DimensionMismatch("neighbouring axes of `A` and `B` must match, got Base.OneTo(7) and Base.OneTo(3)")
 ```
 This is the same behaviour as Mathematica's function `Dot[A, B]`.
+It is not identicaly to Python's `numpy.dot(A, B)`, which contracts with the second-last
+dimension of `B` instead of the first, but both keep all the other dimensions.
+Unlike Julia's `LinearAlgebra.dot`, it does not conjugate `A`, so these two agree only
+for real-valued vectors.
 
 When interacting with `Adjoint` vectors, this always obeys `(x ⊡ y)' == y' ⊡ x'`,
 and hence may sometimes return another `Adjoint` vector. (And similarly for `Transpose`.)
@@ -156,10 +166,10 @@ julia> M = rand(5,5); v = rand(5);
 julia> typeof(v ⊡ M')
 Array{Float64,1}
 
-julia> typeof(M ⊡ v') # adjoint of the previous line
+julia> typeof(M ⊡ v')  # adjoint of the previous line
 Adjoint{Float64,Array{Float64,1}}
 
-julia> typeof(v' ⊡ M') # same as *, and equal to adjoint(M ⊡ v)
+julia> typeof(v' ⊡ M')  # same as *, and equal to adjoint(M ⊡ v)
 Adjoint{Float64,Array{Float64,1}}
 
 julia> typeof(v' ⊡ v)
@@ -239,13 +249,17 @@ boxdot(A::TransposeAbsVec, B::AbstractArray) = vec(A) ⊡ B
 boxdot(A::AbstractArray, B::AdjointAbsVec) = A ⊡ vec(B)
 boxdot(A::AbstractArray, B::TransposeAbsVec) = A ⊡ vec(B)
 
+
+"""
+    boxdot!(Y, A, B, α=1, β=0)
+
+In-place version of `boxdot`, i.e. `Y .= (A ⊡ B) .* β .+ Y .* α`.
+Like 5-argument `mul!`, the use of `α, β` here requires Julia 1.3 or later.
+"""
+function boxdot! end
+
 if VERSION < v"1.3" # Then 5-arg mul! isn't defined
 
-    """
-        boxdot!(Y, A, B)
-
-    In-place version of `boxdot`, i.e. `Y .= A ⊡ B`.
-    """
     function boxdot!(Y::AbstractArray, A::AbstractArray, B::AbstractArray)
         szY = prod(size(A)[1:end-1]), prod(size(B)[2:end])
         mul!(reshape(Y, szY), _squash_left(A), _squash_right(B))
@@ -256,12 +270,6 @@ if VERSION < v"1.3" # Then 5-arg mul! isn't defined
 
 else
 
-    """
-        boxdot!(Y, A, B, α=1, β=0)
-
-    In-place version of `boxdot`, i.e. `Y .= (A ⊡ B) .* β .+ Y .* α`.
-    Like 5-argument `mul!`, the use of `α, β` here requires Julia 1.3 or later.
-    """
     function boxdot!(Y::AbstractArray, A::AbstractArray, B::AbstractArray, α::Number=true, β::Number=false)
         szY = prod(size(A)[1:end-1]), prod(size(B)[2:end])
         mul!(reshape(Y, szY), _squash_left(A), _squash_right(B), α, β)
@@ -283,6 +291,7 @@ as `var"'"`, as shown below.
 
 Then `(x ⊡ y)' == y' ⊡ x'` holds for `x` and `y` arrays of any dimension.
 
+# Examples
 ```jldoctest; setup=:(using TensorCore)
 julia> T3 = rand(3,4,5); v = rand(5);
 
