@@ -70,6 +70,115 @@ end
     @test w ⊗ v == reshape(kron(v,w), (length(w), length(v)))
 end
 
+@testset "arrays of arrays" begin
+    @testset "pseudo-complex" begin
+
+        # This is a matrix representation of the complex numbers:
+        jm = [0 1; -1 0]
+        om = [1 0; 0 1]
+        @test jm * jm == -om
+        @test jm * om == om * jm == jm
+        @test om * om == om
+
+        @test jm' == -jm
+
+        mreal(x::Matrix) = tr(x)/2
+        jmag(x::Matrix) = tr(-x * jm)/2
+        @test mreal((2om+3jm)^2) == real((2+3im)^2)
+        @test jmag((2om+3jm)^2) == imag((2+3im)^2)
+
+        v = [im, 2, 3+im]
+        vm = [jm, 2om, 3om + jm]
+
+        w = [4 + im, 5, 6+7im]
+        wm = [4om + jm, 5om, 6om+7jm]
+        @test real.(w) == mreal.(wm)
+        @test imag.(w) == jmag.(wm)
+
+        # hadamard & tensor
+        @test real.(v ⊙ w) == mreal.(vm ⊙ wm)
+        @test imag.(v ⊙ w) == jmag.(vm ⊙ wm)
+
+        @test real.(v ⊗ w) == mreal.(vm ⊗ wm)
+        @test imag.(v ⊗ w) == jmag.(vm ⊗ wm)
+
+        # kron
+        @test mreal.(kron(vm, wm)) == real.(kron(v, w))
+        @test jmag.(kron(vm, wm)) == imag.(kron(v, w))
+
+        @test vec(kron(v', w')') == kron(v, w)
+        @test vec(kron(vm', wm')') == kron(vm, wm)
+
+        # times, cross & dot
+        outervw = v * w'
+        @test outervw == mreal.(vm * wm') + im * jmag.(vm * wm')
+
+        vcrossw = v × w
+        @test vcrossw == mreal.(vm × wm) + im * jmag.(vm × wm)
+
+        dvw = dot(v, w) # 36 + 11im
+        @test dvw == v' * w
+        @test dvw == sum(v[i]' * w[i] for i in 1:3)
+
+        m_star = vm' * wm  # recursive adjoint is important here!
+        if !(VERSION < v"1.5-")
+            @test dvw == mreal(m_star) + im * jmag(m_star) # fails on 1.4
+        end
+
+        m_wrong = first(permutedims(vm) * wm)
+        @test mreal(m_wrong) + im * jmag(m_wrong) == 20 + 31im
+
+        m_sum = sum(vm[i]' * wm[i] for i in 1:3)
+        @test dvw == mreal(m_sum) + im * jmag(m_sum)
+
+        @test_broken dvw == dot(vm, wm) # 72, wtf?
+        sum(dot(vm[i], wm[i]) for i in 1:3)
+        # I think this behaviour was introduced here:
+        # https://github.com/JuliaLang/julia/pull/27401
+        # I don't actually see an argument for this, and there also seem to be no tests
+        # of this in LinearAlgebra (although I have not changed & run them to check).
+
+        # dot with kron
+        kdot = kron(v, v)' * kron(w, w)
+        kmdot = kron(vm, vm)' * kron(wm, wm)
+        if !(VERSION < v"1.5-")
+            @test kdot == mreal(kmdot) + im * jmag(kmdot)
+        end
+
+    end
+    @testset "block matrix & vector" begin
+
+        # A matrix of matrices, and a vector of vectors:
+        M = [rand(Int8,2,2).+3im for i in 1:3, j in 1:4]
+        N = [rand(Int8,2,2).+5im for i in 1:3, j in 1:4]
+
+        V = [rand(Int8,2).+7im for i in 1:3]
+        W = [rand(Int8,2).+11im for j in 1:4]
+
+        # ordinary LinearAlgebra
+        @test M * N' == (N * M')'
+
+        @test M * W == (W' * M')' # recursive adjoint is important here!
+        @test V' * M == (M' * V)'
+
+        @test V' * V == dot(V,V) # here the behaviour of dot is not wrong
+        if VERSION >= v"1.4"
+            @test V' * M * W == dot(V,M,W)
+        end
+
+        # kron & TensorCore
+        @test M ⊙ M == M .* M != map(⊙, M, M)
+
+        @test first(M ⊗ N) == first(M) * first(N)
+        @test size(M ⊗ N) == (3,4,3,4)
+
+        @test_throws MethodError kron(W, W) # what should this do, if anything?
+        @test_throws MethodError W ⊗ V
+
+    end
+
+end
+
 @testset "boxdot" begin
 
     # Matrices and vectors
