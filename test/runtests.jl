@@ -3,10 +3,14 @@ using LinearAlgebra
 using Test
 
 @testset "Ambiguities" begin
-    @test isempty(detect_ambiguities(TensorCore, Base, Core, LinearAlgebra))
+    if VERSION >= v"1.6-"
+        @test isempty(detect_ambiguities(TensorCore))
+    else
+        @test isempty(detect_ambiguities(TensorCore, Base, Core, LinearAlgebra))
+    end
 end
 
-@testset "TensorCore.jl" begin
+@testset "tensor and hadamard" begin
     for T in (Int, Float32, Float64, BigFloat)
         a = [T[1, 2], T[-3, 7]]
         b = [T[5, 11], T[-13, 17]]
@@ -175,3 +179,121 @@ end
 
 end
 
+@testset "boxdot" begin
+
+    # Matrices and vectors
+    A = [1 2+im; 3 4im]
+    B = [5im 6; 7+im 8]
+    c = [1, 2+3im]
+    d = [3im, 4-5im]
+
+    @test A ⊡ B == A * B
+    @test A ⊡ c == A ⊡ c
+    @test c ⊡ A == vec(transpose(c) * A)
+    @test c ⊡ d == sum(c .* d)
+
+    @test A' ⊡ B == A' * B
+    @test A ⊡ B' == A * B'
+    @test A' ⊡ B' == A' * B'
+
+    # Dual vectors
+    @test c' ⊡ d == dot(c, d)
+    @test c ⊡ d' == conj(dot(c, d))
+    @test c' ⊡ d' == conj(dot(c', d))
+
+    @test transpose(c) ⊡ d == sum(c .* d)
+    @test c ⊡ transpose(d) == sum(c .* d)
+    @test transpose(c) ⊡ transpose(d) == sum(c .* d)
+    @test transpose(c) ⊡ adjoint(d) == sum(c .* conj(d))
+    @test adjoint(c) ⊡ transpose(d) == dot(c,d)
+
+    @test A ⊡ c' isa Adjoint
+    @test A ⊡ c' == (c ⊡ A')'
+    @test c' ⊡ A isa Adjoint
+    @test c' ⊡ A == (A' * c)'
+
+    @test B' ⊡ c' isa Adjoint
+    @test B' ⊡ c' == (c ⊡ B)'
+    @test c' ⊡ B' isa Adjoint
+    @test c' ⊡ B' == (B * c)'
+
+    @test B' ⊡ transpose(c) isa Transpose
+    @test B ⊡ transpose(c) == transpose(c ⊡ transpose(B))
+    @test transpose(c) ⊡ B' isa Transpose
+    @test transpose(c) ⊡ B == transpose(transpose(B) * c)
+
+    # Higher-dimensional arrays
+    E3 = cat(A, -B, dims=3)
+    F4 = cat(E3, conj(E3 .+ 1), dims=4)
+    E3adjoint = conj(permutedims(E3, (3,2,1)))
+    E3lazy = PermutedDimsArray(permutedims(E3, (3,2,1)), (3,2,1))
+    F4lazy = PermutedDimsArray(permutedims(F4, (4,3,2,1)), (4,3,2,1))
+    @test E3lazy == E3
+    @test F4lazy == F4
+
+    @test E3 ⊡ A == reshape(reshape(E3, 4,2) * A, 2,2,2)
+    @test size(A ⊡ E3) == (2, 2, 2)
+    @test size(B ⊡ F4) == (2, 2, 2, 2)
+    @test size(E3 ⊡ F4) == (2, 2, 2, 2, 2)
+    @test E3lazy ⊡ A == E3 ⊡ A
+    @test E3lazy ⊡ F4lazy == E3 ⊡ F4
+    @test F4lazy ⊡ E3lazy == F4 ⊡ E3
+
+    @test c ⊡ E3 == reshape(transpose(c) * reshape(E3, 2,4), 2,2)
+    @test size(F4 ⊡ c) == (2, 2, 2)
+
+    @test c' ⊡ E3 isa Matrix
+    @test c' ⊡ E3 == conj(c) ⊡ E3
+    @test c' ⊡ E3 == (E3adjoint ⊡ c)'
+    @test transpose(c) ⊡ E3 == c ⊡ E3
+    @test c ⊡ E3lazy == c ⊡ E3
+
+    @test E3 ⊡ c' isa Matrix
+    @test E3 ⊡ c' == E3 ⊡ conj(c)
+    @test E3 ⊡ c' == (c ⊡ E3adjoint)'
+    @test E3 ⊡ transpose(c) == E3 ⊡ c
+    @test E3 ⊡ transpose(c) == transpose(c ⊡ PermutedDimsArray(E3, (3,2,1)))
+
+    # Errors
+    @test_throws DimensionMismatch ones(3) ⊡ ones(4)
+    @test_throws DimensionMismatch ones(3) ⊡ ones(4)'
+    @test_throws DimensionMismatch ones(3)' ⊡ ones(4)
+    @test_throws DimensionMismatch ones(3)' ⊡ ones(4)'
+    @test_throws DimensionMismatch ones(2,3) ⊡ ones(4)
+    @test_throws DimensionMismatch ones(2,3) ⊡ ones(4)'
+    @test_throws DimensionMismatch ones(2,3) ⊡ ones(4,5)
+
+    # In-place
+    @test boxdot!(similar(c), A, c) == A * c
+    if VERSION >= v"1.3"
+        @test boxdot!(similar(c), A, c, 100) == A * c * 100
+        @test boxdot!(copy(c), B, d, 100, -5) == B * d * 100 .- 5 .* c
+    end
+
+    @test boxdot!(similar(c), A, c') == A * conj(c)
+    @test boxdot!(similar(c,1), c, d') == [sum(c .* conj(d))]
+
+    @test boxdot!(similar(c)', c', A) == c' * A
+    @test boxdot!(similar(c,1,2), c', A) == c' * A
+
+    @test boxdot!(similar(c,1), c', d) == [dot(c, d)]
+end
+
+@testset "_adjoint" begin
+    A = [1 2+im; 3 4im]
+    E3 = cat(A, -A, dims=3)
+    F4 = cat(E3, conj(E3 .+ 1), dims=4)
+    M3 = [rand(ComplexF32, 2,2) for _ in 1:3, _ in 1:4, _ in 1:5];
+
+    @test TensorCore._adjoint(E3) == conj(permutedims(E3, (3,2,1)))
+    @test TensorCore._transpose(F4) == permutedims(F4, (4,3,2,1))
+    @test TensorCore._adjoint(A) == A'
+    @test TensorCore._transpose(A) == transpose(A)
+
+    @test TensorCore._adjoint(M3)[5,4,3] == adjoint(M3[3,4,5])
+    @test TensorCore._transpose(M3)[1,2,3] == transpose(M3[3,2,1])
+
+    @test TensorCore._adjoint(E3 ⊗ F4) == TensorCore._adjoint(F4) ⊗ TensorCore._adjoint(E3)
+    @test TensorCore._adjoint(E3 ⊡ F4) == TensorCore._adjoint(F4) ⊡ TensorCore._adjoint(E3)
+    @test TensorCore._adjoint(M3 ⊡ TensorCore._adjoint(M3)) ≈ M3 ⊡ TensorCore._adjoint(M3)
+end
