@@ -1,6 +1,6 @@
 # TensorCore.jl
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliahub.com/docs/TensorCore/)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaMath.github.io/TensorCore.jl/stable)
 [![CI](https://github.com/JuliaMath/TensorCore.jl/workflows/CI/badge.svg)](https://github.com/JuliaMath/TensorCore.jl/actions?query=workflow%3ACI)
 [![Codecov](https://codecov.io/gh/JuliaMath/TensorCore.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaMath/TensorCore.jl)
 
