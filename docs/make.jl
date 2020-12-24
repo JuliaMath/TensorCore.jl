@@ -13,4 +13,5 @@ makedocs(;
 
 deploydocs(;
     repo="github.com/JuliaMath/TensorCore.jl",
+    push_preview=true
 )
