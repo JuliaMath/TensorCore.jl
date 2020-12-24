@@ -1,7 +1,7 @@
-# TensorCore
+# TensorCore.jl
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaMath.github.io/TensorCore.jl/stable)
-[![Build Status](https://travis-ci.com/JuliaMath/TensorCore.jl.svg?branch=master)](https://travis-ci.com/JuliaMath/TensorCore.jl)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliahub.com/docs/TensorCore/)
+[![CI](https://github.com/JuliaMath/TensorCore.jl/workflows/CI/badge.svg)](https://github.com/JuliaMath/TensorCore.jl/actions?query=workflow%3ACI)
 [![Codecov](https://codecov.io/gh/JuliaMath/TensorCore.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaMath/TensorCore.jl)
 
 This package is intended as a lightweight foundation for tensor operations across the Julia ecosystem.
