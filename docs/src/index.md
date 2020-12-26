@@ -1,7 +1,7 @@
 # TensorCore.jl
 
 This package is intended as a lightweight foundation for tensor operations across the Julia ecosystem.
-Currently it exports two core operations, `hadamard` and `tensor`, and corresponding unicode operators `⊙` and `⊗`, respectively.
+Currently it exports three operations, `hadamard`, `tensor` and `boxdot`, and corresponding unicode operators `⊙`, `⊗` and `⊡`.
 
 ## API
 
@@ -13,4 +13,6 @@ hadamard
 hadamard!
 tensor
 tensor!
+boxdot
+boxdot!
 ```
