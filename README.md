@@ -5,7 +5,8 @@
 [![Codecov](https://codecov.io/gh/JuliaMath/TensorCore.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaMath/TensorCore.jl)
 
 This package is intended as a lightweight foundation for tensor operations across the Julia ecosystem.
-Currently it exports three operations:
+Currently it exports four operations:
+* `directsum` of matrices, with unicode operator `⊕`,   
 * `hadamard` elementwise multiplication, with unicode operator `⊙`,
 * `tensor` product preserves all dimensions, operator `⊗`, and
 * `boxdot` contracts neighbouring dimensions, named after the unicode `⊡`.
@@ -14,6 +15,13 @@ Currently it exports three operations:
 julia> using TensorCore
 
 julia> A = [1 2 3; 4 5 6]; B = [7 8 9; 0 10 20];
+
+julia> A ⊕ B  # directsum(A, B)
+4×6 Matrix{Int64}:
+ 1  2  3  0   0   0
+ 4  5  6  0   0   0
+ 0  0  0  7   8   9
+ 0  0  0  0  10  20
 
 julia> A ⊙ B  # hadamard(A, B)
 2×3 Matrix{Int64}:
