@@ -20,12 +20,12 @@ For arrays `a` and `b`, perform elementwise multiplication.
 julia> a = [2, 3]; b = [5, 7];
 
 julia> a ⊙ b
-2-element Array{$Int,1}:
+2-element Vector{$Int}:
  10
  21
 
 julia> a ⊙ [5]
-ERROR: DimensionMismatch("Axes of `A` and `B` must match, got (Base.OneTo(2),) and (Base.OneTo(1),)")
+ERROR: DimensionMismatch: Axes of `A` and `B` must match, got (Base.OneTo(2),) and (Base.OneTo(1),)
 [...]
 ```
 
@@ -74,7 +74,7 @@ For vectors `v` and `w`, the Kronecker product is related to the tensor product 
 julia> a = [2, 3]; b = [5, 7, 11];
 
 julia> a ⊗ b
-2×3 Array{$Int,2}:
+2×3 Matrix{$Int}:
  10  14  22
  15  21  33
 ```
@@ -164,13 +164,13 @@ and hence may sometimes return another `Adjoint` vector. (And similarly for `Tra
 julia> M = rand(5,5); v = rand(5);
 
 julia> typeof(v ⊡ M')
-Array{Float64,1}
+Vector{Float64} (alias for Array{Float64, 1})
 
 julia> typeof(M ⊡ v')  # adjoint of the previous line
-Adjoint{Float64,Array{Float64,1}}
+LinearAlgebra.Adjoint{Float64, Vector{Float64}}
 
 julia> typeof(v' ⊡ M')  # same as *, and equal to adjoint(M ⊡ v)
-Adjoint{Float64,Array{Float64,1}}
+LinearAlgebra.Adjoint{Float64, Vector{Float64}}
 
 julia> typeof(v' ⊡ v)
 Float64
