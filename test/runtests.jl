@@ -188,7 +188,7 @@ end
     d = [3im, 4-5im]
 
     @test A ⊡ B == A * B
-    @test A ⊡ c == A ⊡ c
+    @test A ⊡ c == A * c
     @test c ⊡ A == vec(transpose(c) * A)
     @test c ⊡ d == sum(c .* d)
 
