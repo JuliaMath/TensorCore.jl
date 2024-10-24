@@ -268,6 +268,8 @@ end
     if VERSION >= v"1.3"
         @test boxdot!(similar(c), A, c, 100) == A * c * 100
         @test boxdot!(copy(c), B, d, 100, -5) == B * d * 100 .- 5 .* c
+        @test boxdot!(similar(c), A, c', 100) == A * conj(c) * 100
+        @test boxdot!(copy(c), B, d', 100, -5) == B * conj(d) * 100 .- 5 .* c
     end
 
     @test boxdot!(similar(c), A, c') == A * conj(c)

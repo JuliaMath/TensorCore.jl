@@ -278,7 +278,7 @@ else
 
     # For boxdot!, only where mul! behaves differently:
     boxdot!(Y::AbstractArray, A::AbstractArray, B::AdjOrTransAbsVec,
-        α::Number=true, β::Number=false) = boxdot!(Y, A, vec(B))
+        α::Number=true, β::Number=false) = boxdot!(Y, A, vec(B), α, β)
 
 end
 
