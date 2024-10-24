@@ -188,7 +188,7 @@ end
     d = [3im, 4-5im]
 
     @test A ⊡ B == A * B
-    @test A ⊡ c == A ⊡ c
+    @test A ⊡ c == A * c
     @test c ⊡ A == vec(transpose(c) * A)
     @test c ⊡ d == sum(c .* d)
 
@@ -268,6 +268,8 @@ end
     if VERSION >= v"1.3"
         @test boxdot!(similar(c), A, c, 100) == A * c * 100
         @test boxdot!(copy(c), B, d, 100, -5) == B * d * 100 .- 5 .* c
+        @test boxdot!(similar(c), A, c', 100) == A * conj(c) * 100
+        @test boxdot!(copy(c), B, d', 100, -5) == B * conj(d) * 100 .- 5 .* c
     end
 
     @test boxdot!(similar(c), A, c') == A * conj(c)
