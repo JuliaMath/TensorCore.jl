@@ -213,13 +213,13 @@ _squash_right(B::AbstractArray, ::Val{N}) where {N} = reshape(B, :,prod(size(B)[
 _squash_right(B::AbstractVecOrMat, ::Val{1}) = B
 
 function _boxdot_reshape(AB::AbstractArray, A::AbstractArray{T,N}, B::AbstractArray{S,M}, ::Val{K}) where {T,N,S,M,K}
-    N-K ≥ 1 && M-K ≥ 1 && N+M-2K ≤ 2 && return AB # These can skip final reshape
+    N == M == K+1 && return AB # These can skip final reshape
     ax = ntuple(i -> i≤N-K ? axes(A, i) : axes(B, i-N+2K), Val(N+M-2K))
     reshape(AB, ax) # some cases don't come here, so this doesn't really support OffsetArrays
 end
 
 # These can skip final reshape:
-_boxdot_reshape(AB::AbstractVecOrMat, A::AbstractMatrix, B::AbstractVecOrMat, ::Val) = AB
+_boxdot_reshape(AB::AbstractVecOrMat, A::AbstractMatrix, B::AbstractVecOrMat, ::Val{1}) = AB
 
 # These produce scalar output:
 function boxdot(A::AbstractArray{<:Any,N}, B::AbstractArray{<:Any,N}, ::Val{N}) where {N}
