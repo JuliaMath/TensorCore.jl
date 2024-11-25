@@ -1,5 +1,6 @@
 using TensorCore
 using LinearAlgebra
+using SparseArrays
 using Test
 
 @testset "Ambiguities" begin
@@ -279,6 +280,35 @@ end
     @test boxdot!(similar(c,1,2), c', A) == c' * A
 
     @test boxdot!(similar(c,1), c', d) == [dot(c, d)]
+end
+
+@testset "directsum" begin
+    A = rand(3, 2)
+    B = rand(2, 4)
+    b = rand(2)
+
+    # size
+    @test size(A ⊕ B) == (5, 6)
+    @test size(A ⊕ B') == (7, 4)
+    @test size(A ⊕ b) == (5, 3)
+    @test size(A ⊕ b') == (4, 4)
+
+    # eltype
+    eltypes = [(ComplexF64, Float64), (Float64, Float32), (Float32, Int), (Int, Bool)]
+    for (Ta, Tb) in eltypes
+        A = rand(Ta, 2, 2)
+        B = rand(Tb, 2, 2)
+        C = A ⊕ B
+        @test eltype(C) == Ta
+    end
+
+    # sparse
+    A = sprand(4, 4, 0.5)
+    B = sprand(2, 2, 0.5)
+    B´ = Array(B)
+
+    @test A ⊕ B isa SparseMatrixCSC
+    @test A ⊕ B´ isa SparseMatrixCSC
 end
 
 @testset "_adjoint" begin
