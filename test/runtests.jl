@@ -279,6 +279,59 @@ end
     @test boxdot!(similar(c,1,2), c', A) == c' * A
 
     @test boxdot!(similar(c,1), c', d) == [dot(c, d)]
+
+    @testset "higher-order boxdot" begin
+        @test A ⊡₂ A isa Complex
+        @test boxdot(E3, E3, Val(3)) isa Complex
+        @test boxdot(F4, F4, Val(4)) isa Complex
+        @test A ⊡₂ A == sum(A .* A)
+        @test boxdot(E3, E3, Val(3)) == sum(E3 .* E3)
+        @test boxdot(F4, F4, Val(4)) == sum(F4 .* F4)
+
+        @test size(A ⊡₂ E3) == (2,)
+        @test A ⊡₂ E3 == vec(reshape(A, 1,:) * reshape(E3, :,2))
+        @test A ⊡₂ E3lazy == A ⊡₂ E3
+        @test E3 ⊡₂ A' == vec((A ⊡₂ E3adjoint)')
+        @test E3 ⊡₂ transpose(A) == A ⊡₂ conj(E3adjoint)
+
+        @test size(A ⊡₂ F4) == (2,2)
+        @test A ⊡₂ F4 == reshape(reshape(A, 1,:) * reshape(F4, :,4), 2,2)
+        @test A ⊡₂ F4lazy == A ⊡₂ F4
+        @test F4lazy ⊡₂ A == F4 ⊡₂ A
+
+        @test size(F4 ⊡₂ E3) == (2,2,2)
+        @test F4 ⊡₂ E3 == reshape(reshape(F4, 4,:) * reshape(E3, :,2), 2,2,2)
+        @test F4 ⊡₂ E3 == F4lazy ⊡₂ E3lazy
+
+        # In-place
+        @test boxdot!(similar(c), A, E3, Val(2)) == A ⊡₂ E3
+        if VERSION >= v"1.3"
+            @test boxdot!(similar(c), A, E3, Val(2), 100) == A ⊡₂ E3 * 100
+            @test boxdot!(copy(c), B, E3, Val(2), 100, -5) == B ⊡₂ E3 * 100 .- 5 .* c
+        end
+
+        @test boxdot!(similar(c,1), A, A, Val(2)) == [A ⊡₂ A]
+        @test boxdot!(similar(c,2,2), A, F4, Val(2)) == A ⊡₂ F4
+        @test boxdot!(similar(c,2,2,2), F4, E3, Val(2)) == F4 ⊡₂ E3
+
+        # Errors
+        @test_throws DimensionMismatch ones(2,2) ⊡₂ ones(3,2)
+        @test_throws DimensionMismatch ones(2,2) ⊡₂ ones(2,3)
+        @test_throws DimensionMismatch ones(2,2,2) ⊡₂ ones(2,3,2)
+        @test_throws BoundsError ones(2,2) ⊡₂ ones(2)
+        @test_throws BoundsError ones(2) ⊡₂ ones(2,2)
+        @test_throws ArgumentError boxdot(ones(2), ones(2), Val(-1))
+        @test_throws TypeError boxdot(ones(2), ones(2), Val(UInt(1)))
+
+        @test_throws DimensionMismatch boxdot!(similar(c,1), ones(2,2), ones(3,2), Val(2))
+        @test_throws DimensionMismatch boxdot!(similar(c,1), ones(2,2), ones(2,3), Val(2))
+        @test_throws DimensionMismatch boxdot!(similar(c,2,2), ones(2,2,2), ones(2,3,2), Val(2))
+        @test_throws BoundsError boxdot!(similar(c,1), ones(2,2), ones(2), Val(2))
+        @test_throws BoundsError boxdot!(similar(c,1), ones(2), ones(2,2), Val(2))
+        @test_throws DimensionMismatch boxdot!(similar(c,2,3), ones(2,2,3), ones(2,3,2), Val(2))
+        @test_throws ArgumentError boxdot!(similar(c,1), ones(2), ones(2), Val(-1))
+        @test_throws TypeError boxdot!(similar(c,1), ones(2), ones(2), Val(UInt(1)))
+    end
 end
 
 @testset "_adjoint" begin
