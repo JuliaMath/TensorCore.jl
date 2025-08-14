@@ -5,6 +5,7 @@ using LinearAlgebra
 export ⊙, hadamard, hadamard!
 export ⊗, tensor, tensor!
 export ⊡, boxdot, boxdot!
+export ⊕, directsum
 
 """
     hadamard(a, b)
@@ -281,6 +282,36 @@ else
         α::Number=true, β::Number=false) = boxdot!(Y, A, vec(B), α, β)
 
 end
+
+"""
+    directsum(A, B)
+    A ⊕ B
+
+    The direct sum of matrices `A` of size m × n and `B` of size p × q constructs a block matrix of size (m + p)×(n + q), 
+    with `A` and `B` as diagonal elements and zero matrices for the off-diagonal blocks.
+
+    `A ⊕ B = [A 0; 0 B]`
+
+    # Examples
+    ```jldoctest; setup=:(using TensorCore)
+    julia> A = [1 3 2; 2 3 1]; B = [1 6; 0 1];
+
+    julia> A ⊕ B
+    4×5 Matrix{Int64}:
+    1  3  2  0  0
+    2  3  1  0  0
+    0  0  0  1  6
+    0  0  0  0  1
+    ```
+"""
+function directsum(A::AbstractArray, B::AbstractArray)
+    Z1 = zeros(Bool, size(A, 1), size(B, 2)) # upper right
+    Z2 = zeros(Bool, size(B, 1), size(A, 2)) # lower left
+
+    return [A Z1; Z2 B]
+end
+
+const ⊕ = directsum
 
 """
     TensorCore._adjoint(A)
